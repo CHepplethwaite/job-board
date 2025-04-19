@@ -1,0 +1,26 @@
+<div class="auth-container">
+  <div class="card">
+    <h2>Email Verification</h2>
+    
+    @if (loading) {
+      <div class="text-center">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>Verifying your email...</p>
+      </div>
+    }
+    
+    @if (success) {
+      <div class="alert alert-success">
+        Your email has been successfully verified! You can now <a routerLink="/auth/login">login</a>.
+      </div>
+    }
+    
+    @if (error && !loading) {
+      <div class="alert alert-danger">
+        {{ error }} <a routerLink="/auth/register">Register again</a> or contact support.
+      </div>
+    }
+  </div>
+</div>

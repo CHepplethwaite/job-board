@@ -1,8 +1,10 @@
-import { Injectable } from '@angular/core';
+// src/app/core/services/auth.service.ts
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap } from 'rxjs';
-import { User, UserCredentials, RegisterUser, AuthResponse } from '../../models/user.model';
-import { environment } from '../../../../environments/environment';
+import { User, UserCredentials, RegisterUser, AuthResponse } from '../models/user.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -12,11 +14,18 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(private http: HttpClient) {
-    this.loadUserFromStorage();
+  constructor(
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadUserFromStorage();
+    }
   }
 
   private loadUserFromStorage(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
     const user = localStorage.getItem('currentUser');
     if (user) {
       this.currentUserSubject.next(JSON.parse(user));
@@ -40,8 +49,10 @@ export class AuthService {
   }
 
   logout(): void {
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('token');
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('token');
+    }
     this.currentUserSubject.next(null);
   }
 
@@ -50,6 +61,7 @@ export class AuthService {
   }
 
   get token(): string | null {
+    if (!isPlatformBrowser(this.platformId)) return null;
     return localStorage.getItem('token');
   }
 
@@ -58,6 +70,8 @@ export class AuthService {
   }
 
   private storeAuthData(response: AuthResponse): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
     localStorage.setItem('currentUser', JSON.stringify(response.user));
     localStorage.setItem('token', response.token);
     this.currentUserSubject.next(response.user);
@@ -72,14 +86,22 @@ export class AuthService {
   }
 
   verifyEmail(token: string): Observable<{ message: string }> {
-    return this.http.get<{ message: string }>(`${this.apiUrl}/auth/verify-email?token=${token}`);
+    return this.http.get<{ message: string }>(
+      `${this.apiUrl}/auth/verify-email?token=${token}`
+    );
   }
 
   forgotPassword(email: string): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/auth/forgot-password`, { email });
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/auth/forgot-password`, 
+      { email }
+    );
   }
 
   resetPassword(token: string, newPassword: string): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/auth/reset-password`, { token, newPassword });
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/auth/reset-password`,
+      { token, newPassword }
+    );
   }
 }

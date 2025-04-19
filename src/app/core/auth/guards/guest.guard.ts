@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators';
 @Injectable({
   providedIn: 'root'
 })
-export class AuthGuard implements CanActivate {
+export class GuestGuard implements CanActivate {
   constructor(private authService: AuthService, private router: Router) {}
 
   canActivate(
@@ -15,10 +15,10 @@ export class AuthGuard implements CanActivate {
     state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
     return this.authService.currentUser$.pipe(
       map(user => {
-        if (user) {
+        if (!user) {
           return true;
         }
-        return this.router.createUrlTree(['/auth/login'], { queryParams: { returnUrl: state.url } });
+        return this.router.createUrlTree([`/${user.role}/dashboard`]);
       })
     );
   }
